@@ -1,5 +1,11 @@
 # TinyRAG: An Efficient RAG Implementation for Offline Challenges
-## Quick Summary
+
+## Video Summary:
+
+https://youtu.be/ZINHsItd9uc
+
+## Quick Summary:
+
 - **Performance**: 
   - Accuracy: 0.66%
 - **Retrieval System**:
