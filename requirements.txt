@@ -1,0 +1,22 @@
+
+
+torch
+numpy
+pandas
+selenium
+sentence-transformers
+transformers
+tokenizers
+nltk
+tiktoken
+neo4j
+networkx
+pyyaml
+pandas
+openai    # if you're using OpenAI
+flashrank # if you're u
+langchain-ollama
+langchain
+together
+pymilvus
+

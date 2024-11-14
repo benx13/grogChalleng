@@ -1,0 +1,229 @@
+{
+  "nodes": {
+    "Query Input-1": {
+      "type": "query_input",
+      "parameters": {},
+      "interfaces": {
+        "query": "output"
+      }
+    },
+    "Vector Retriever-1": {
+      "type": "vector_retriever",
+      "parameters": {
+        "uri": "tcp://192.168.1.96:19530",
+        "collection_name": "XXX"
+      },
+      "interfaces": {
+        "query": "intput",
+        "context": "output"
+      }
+    },
+    "Graph Retriever-1": {
+      "type": "graph_retriever",
+      "parameters": {
+        "uri": "bolt://localhost:7689",
+        "user": "neo4j",
+        "password": "strongpassword"
+      },
+      "interfaces": {
+        "query": "intput",
+        "context": "output"
+      }
+    },
+    "Join Lists-1": {
+      "type": "join_lists",
+      "parameters": {},
+      "interfaces": {
+        "context_1": "intput",
+        "context_2": "intput",
+        "input_context": "output"
+      }
+    },
+    "Reranker-1": {
+      "type": "reranker",
+      "parameters": {
+        "model_name": "rank-T5-flan",
+        "cache_dir": "/tmp"
+      },
+      "interfaces": {
+        "query": "intput",
+        "input_context": "intput",
+        "context": "output"
+      }
+    },
+    "Llm-1": {
+      "type": "llm",
+      "parameters": {
+        "model": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+        "temperature": 0
+      },
+      "interfaces": {
+        "query": "intput",
+        "context": "intput",
+        "response": "output"
+      }
+    },
+    "Response Output-1": {
+      "type": "response_output",
+      "parameters": {},
+      "interfaces": {
+        "response": "intput"
+      }
+    }
+  },
+  "edges": [
+    {
+      "source": "Query Input-1",
+      "source_port": "query",
+      "target": "Graph Retriever-1",
+      "target_port": "query"
+    },
+    {
+      "source": "Query Input-1",
+      "source_port": "query",
+      "target": "Vector Retriever-1",
+      "target_port": "query"
+    },
+    {
+      "source": "Query Input-1",
+      "source_port": "query",
+      "target": "Reranker-1",
+      "target_port": "query"
+    },
+    {
+      "source": "Query Input-1",
+      "source_port": "query",
+      "target": "Llm-1",
+      "target_port": "query"
+    },
+    {
+      "source": "Vector Retriever-1",
+      "source_port": "context",
+      "target": "Join Lists-1",
+      "target_port": "context_1"
+    },
+    {
+      "source": "Graph Retriever-1",
+      "source_port": "context",
+      "target": "Join Lists-1",
+      "target_port": "context_2"
+    },
+    {
+      "source": "Join Lists-1",
+      "source_port": "input_context",
+      "target": "Reranker-1",
+      "target_port": "input_context"
+    },
+    {
+      "source": "Reranker-1",
+      "source_port": "context",
+      "target": "Llm-1",
+      "target_port": "context"
+    },
+    {
+      "source": "Llm-1",
+      "source_port": "response",
+      "target": "Response Output-1",
+      "target_port": "response"
+    }
+  ],
+  "config": {
+    "query_input": {
+      "input": {},
+      "output": {
+        "query": "str"
+      }
+    },
+    "retrievers": [
+      {
+        "type": "vector",
+        "parameters": {
+          "uri": "tcp://192.168.1.96:19530",
+          "collection_name": "XXX"
+        },
+        "input": {
+          "query": "str"
+        },
+        "output": {
+          "context": "List[str]"
+        },
+        "method": "invoke"
+      },
+      {
+        "type": "graph",
+        "parameters": {
+          "uri": "bolt://localhost:7689",
+          "user": "neo4j",
+          "password": "strongpassword"
+        },
+        "input": {
+          "query": "str"
+        },
+        "output": {
+          "context": "List[str]"
+        },
+        "method": "invoke"
+      }
+    ],
+    "reranker": {
+      "type": "flashrank",
+      "parameters": {
+        "model_name": "rank-T5-flan",
+        "cache_dir": "/tmp"
+      },
+      "input": {
+        "query": "str",
+        "input_context": "List[str]"
+      },
+      "output": {
+        "context": "List[str]"
+      },
+      "method": "invoke"
+    },
+    "join": {
+      "parameters": {
+        "separator": "\n\nContext {i}:\n",
+        "final_separator": "\n\n----------\n\n"
+      },
+      "input": {
+        "context_1": "List[str]",
+        "context_2": "List[str]"
+      },
+      "output": {
+        "combined_context": "str"
+      }
+    },
+    "join_lists": {
+      "parameters": {},
+      "input": {
+        "context_1": "List[str]",
+        "context_2": "List[str]"
+      },
+      "output": {
+        "input_context": "List[str]"
+      },
+      "method": "invoke"
+    },
+    "llm": {
+      "type": "openai",
+      "parameters": {
+        "model": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+        "temperature": 0
+      },
+      "input": {
+        "query": "str",
+        "context": "str"
+      },
+      "output": {
+        "response": "str"
+      },
+      "method": "invoke"
+    },
+    "response_output": {
+      "input": {
+        "response": "str"
+      },
+      "output": {}
+    }
+  }
+}

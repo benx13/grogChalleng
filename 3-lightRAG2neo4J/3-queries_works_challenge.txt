@@ -1,0 +1,91 @@
+---------
+
+
+
+CALL {
+  CALL db.index.fulltext.queryNodes("nodeIndex", 'ZCL~') YIELD node, score
+  RETURN node, score, "node" as type
+}
+WITH collect({node: node, type: type, score: score}) as results
+UNWIND results as result
+WITH results, result
+ORDER BY result.score DESC
+LIMIT 40
+WITH collect(result) as sortedResults, max(result.score) as maxScore
+
+// Calculate the average score
+UNWIND sortedResults as result
+WITH sortedResults, maxScore, result
+WITH sortedResults, maxScore, avg(result.score) as avgScore
+
+// Calculate the standard deviation
+UNWIND sortedResults as result
+WITH sortedResults, maxScore, avgScore, result
+WITH sortedResults, maxScore, avgScore,
+     sqrt(avg((result.score - avgScore)^2)) as stdDev
+
+// Determine the cluster threshold
+WITH sortedResults, maxScore, avgScore, stdDev,
+     maxScore - 1*stdDev as clusterThreshold
+
+// Now unwind and apply the threshold filter
+UNWIND sortedResults as result
+WITH result, maxScore, avgScore, stdDev, clusterThreshold
+WHERE result.score >= clusterThreshold  // Apply the threshold filter
+
+RETURN 
+    result.node.name as name,
+    result.node.description as description,
+    result.score as score,
+    maxScore,
+    result.score / maxScore as relativeScore,
+    clusterThreshold
+ORDER BY result.score DESC
+
+
+
+
+
+CALL {
+  CALL db.index.fulltext.queryRelationships("relationshipIndex", 'SRP~') 
+  YIELD relationship, score
+  RETURN relationship, score, type(relationship) AS type
+}
+WITH collect({relationship: relationship, type: type, score: score}) AS results
+UNWIND results AS result
+WITH results, result
+ORDER BY result.score DESC
+LIMIT 40
+WITH collect(result) AS sortedResults, max(result.score) AS maxScore
+
+// Calculate the average score
+UNWIND sortedResults AS result
+WITH sortedResults, maxScore, result
+WITH sortedResults, maxScore, avg(result.score) AS avgScore
+
+// Calculate the standard deviation
+UNWIND sortedResults AS result
+WITH sortedResults, maxScore, avgScore, result
+WITH sortedResults, maxScore, avgScore,
+     sqrt(avg((result.score - avgScore)^2)) AS stdDev
+
+// Determine the cluster threshold - More lenient (e.g., 2*stdDev)
+WITH sortedResults, maxScore, avgScore, stdDev,
+     maxScore - 2*stdDev AS clusterThreshold
+
+// Apply a more lenient threshold filter
+UNWIND sortedResults AS result
+WITH result, maxScore, clusterThreshold
+WHERE result.score >= clusterThreshold
+
+RETURN 
+    startNode(result.relationship).name AS startNodeName,
+    endNode(result.relationship).name AS endNodeName,
+    result.relationship.description AS relationshipDescription,
+    type(result.relationship) AS relationshipType,
+    result.score AS score,
+    maxScore,
+    result.score / maxScore AS relativeScore,
+    clusterThreshold
+ORDER BY result.score DESC;
+

@@ -1,0 +1,8 @@
+docker run -p 7476:7474 -p 7689:7687 --name neo4j-apocXXXXX7 \
+-e NEO4J_apoc_export_file_enabled=true \
+-e NEO4J_apoc_import_file_enabled=true \
+-e NEO4J_apoc_import_file_use__neo4j__config=true \
+-e NEO4J_PLUGINS='["graph-data-science", "apoc"]' \
+-e NEO4J_AUTH=neo4j/strongpassword \
+neo4j:5.23.0
+

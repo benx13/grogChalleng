@@ -1,0 +1,76 @@
+components:
+  query_input:
+    input: {}
+    output:
+      query: str
+
+  retrievers:
+    - type: "vector"
+      parameters:
+        uri: "tcp://192.168.1.96:19530"
+        collection_name: "XXX"
+      input:
+        query: str
+      output:
+        context: List[str]
+      method: "invoke"
+
+    - type: "graph"
+      parameters:
+        uri: "bolt://localhost:7689"
+        user: "neo4j"
+        password: "strongpassword"
+      input:
+        query: str
+      output:
+        context: List[str]
+      method: "invoke"
+
+  reranker:
+    type: "flashrank"
+    parameters:
+      model_name: "rank-T5-flan"
+      cache_dir: "/tmp"
+    input:
+      query: str
+      input_context: List[str]
+    output:
+      context: List[str]
+    method: "invoke"
+
+  join:
+    parameters:
+      separator: "\n\nContext {i}:\n"
+      final_separator: "\n\n----------\n\n"
+    input:
+      context_1: List[str]
+      context_2: List[str]
+    output:
+      combined_context: str
+
+  join_lists:
+    parameters: {}
+    input:
+      context_1: List[str]
+      context_2: List[str]
+    output:
+      input_context: List[str]
+    method: "invoke"
+
+  llm:
+    type: "openai"
+    parameters:
+      model: "Qwen/Qwen2.5-7B-Instruct-Turbo"
+      temperature: 0
+    input:
+      query: str
+      context: str
+    output:
+      response: str
+    method: "invoke"
+
+  response_output:
+    input:
+      response: str
+    output: {}
+
